@@ -11,7 +11,7 @@ import pickle
 import argparse
 import numpy as np
 from scipy.io import loadmat
-from bbox import bbox_overlaps
+from .bbox import bbox_overlaps
 from IPython import embed
 
 

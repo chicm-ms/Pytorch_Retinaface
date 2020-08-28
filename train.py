@@ -104,6 +104,8 @@ def train():
     else:
         start_iter = 0
 
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
     for iteration in range(start_iter, max_iter):
         if iteration % epoch_size == 0:
             # create batch iterator
