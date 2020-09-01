@@ -14,11 +14,12 @@ import math
 import random
 import numpy as np
 from models.retinaface import RetinaFace
+from validate import validate
 
 parser = argparse.ArgumentParser(description='Retinaface Training')
 parser.add_argument('--training_dataset', default='./data/widerface/train/label.txt', help='Training dataset directory')
 parser.add_argument('--network', default='mobile0.25', help='Backbone network mobile0.25 or resnet50')
-parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
+parser.add_argument('--num_workers', default=32, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--resume_net', default=None, help='resume net for retraining')
@@ -127,6 +128,13 @@ def train():
     #print('done')
     train_loader = data.DataLoader(dataset, batch_size, shuffle=True, num_workers=num_workers, collate_fn=detection_collate)
 
+    best_metrics = [0.] * 4
+    if args.resume_net is not None:
+        aps = validate(args.resume_net)
+        print('val metrics:', aps)
+        best_metrics = aps
+        
+
     #for iteration in range(start_iter, max_iter):
     for epoch in range(max_epoch):
         load_t0 = time.time()
@@ -135,7 +143,7 @@ def train():
             targets = [anno.cuda() for anno in targets]
 
             #mixup
-            if random.random() < 0.4 and epoch >= 0:
+            if random.random() < 0. and epoch >= 0:
                 shuffle_indices = torch.randperm(images.size(0))
                 indices = torch.arange(images.size(0))
                 lam = np.clip(np.random.beta(1.0, 1.0), 0.35, 0.65)
@@ -174,6 +182,15 @@ def train():
         print("")
         torch.save(net.state_dict(), save_folder + cfg['name'] + '_latest.pth')
         lr_scheduler.step()
+
+        # evaluate
+        if epoch % 3 == 0:
+            aps = validate(save_folder + cfg['name'] + '_latest.pth')
+            print('val metrics:', aps)
+            if aps[0] > best_metrics[0]:
+                best_metrics = aps
+                print('cur best metrics:', best_metrics)
+                torch.save(net.state_dict(), save_folder + cfg['name'] + '_best.pth')
 
 
 def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_size):

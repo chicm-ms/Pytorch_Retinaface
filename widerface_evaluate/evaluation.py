@@ -11,8 +11,12 @@ import pickle
 import argparse
 import numpy as np
 from scipy.io import loadmat
-from .bbox import bbox_overlaps
 from IPython import embed
+
+if __name__ == '__main__':
+    from bbox import bbox_overlaps
+else:
+    from .bbox import bbox_overlaps
 
 
 def get_gt_boxes(gt_dir):
@@ -161,7 +165,7 @@ def image_eval(pred, gt, ignore, iou_thresh):
     _gt[:, 2] = _gt[:, 2] + _gt[:, 0]
     _gt[:, 3] = _gt[:, 3] + _gt[:, 1]
 
-    overlaps = bbox_overlaps(_pred[:, :4], _gt)
+    overlaps = bbox_overlaps(_pred[:, :4].astype(np.float), _gt)
 
     for h in range(_pred.shape[0]):
 
@@ -225,7 +229,8 @@ def voc_ap(rec, prec):
 
 
 def evaluation(pred, gt_path, iou_thresh=0.5):
-    pred = get_preds(pred)
+    if isinstance(pred, str):
+        pred = get_preds(pred)
     norm_score(pred)
     facebox_list, event_list, file_list, hard_gt_list, medium_gt_list, easy_gt_list = get_gt_boxes(gt_path)
     event_num = len(event_list)
@@ -250,7 +255,14 @@ def evaluation(pred, gt_path, iou_thresh=0.5):
             gt_bbx_list = facebox_list[i][0]
 
             for j in range(len(img_list)):
-                pred_info = pred_list[str(img_list[j][0][0])]
+                if str(img_list[j][0][0]) in pred_list:
+                    pred_info = pred_list[str(img_list[j][0][0])]
+                else:
+                    # Prediction code should generate key for each image in the pred dict even
+                    # if no detected object. 
+                    # This else branch assume that we are predicting a subset of
+                    # validation set.
+                    continue
 
                 gt_boxes = gt_bbx_list[j][0].astype('float')
                 keep_index = sub_gt_list[j][0]
@@ -279,6 +291,7 @@ def evaluation(pred, gt_path, iou_thresh=0.5):
     print("Medium Val AP: {}".format(aps[1]))
     print("Hard   Val AP: {}".format(aps[2]))
     print("=================================================")
+    return aps
 
 
 if __name__ == '__main__':
