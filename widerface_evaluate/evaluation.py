@@ -153,6 +153,10 @@ def image_eval(pred, gt, ignore, iou_thresh):
     gt: Nx4
     ignore:
     """
+    #print('pred:', pred)
+    #print('gt:', gt)
+    #print('ignore:', ignore)
+    #print('thresh:', iou_thresh)
 
     _pred = pred.copy()
     _gt = gt.copy()
@@ -180,6 +184,8 @@ def image_eval(pred, gt, ignore, iou_thresh):
 
         r_keep_index = np.where(recall_list == 1)[0]
         pred_recall[h] = len(r_keep_index)
+    #print('pred_recall:', pred_recall)
+    #print('proposal:', proposal_list)
     return pred_recall, proposal_list
 
 
@@ -248,6 +254,8 @@ def evaluation(pred, gt_path, iou_thresh=0.5):
         for i in pbar:
             pbar.set_description('Processing {}'.format(settings[setting_id]))
             event_name = str(event_list[i][0][0])
+            if event_name not in pred:
+                continue
             img_list = file_list[i][0]
             pred_list = pred[event_name]
             sub_gt_list = gt_list[i][0]
