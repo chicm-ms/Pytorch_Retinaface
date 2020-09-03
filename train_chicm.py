@@ -130,7 +130,7 @@ def train():
 
     best_metrics = [0.] * 4
     if args.resume_net is not None:
-        aps = validate(args.resume_net)
+        aps = validate(args.resume_net, args.network)
         print('val metrics:', aps)
         best_metrics = aps
         
@@ -143,7 +143,7 @@ def train():
             targets = [anno.cuda() for anno in targets]
 
             #mixup
-            if random.random() < 0. and epoch >= 0:
+            if random.random() < 0.4 and epoch >= 0:
                 shuffle_indices = torch.randperm(images.size(0))
                 indices = torch.arange(images.size(0))
                 lam = np.clip(np.random.beta(1.0, 1.0), 0.35, 0.65)
@@ -185,11 +185,11 @@ def train():
 
         # evaluate
         if epoch % 3 == 0:
-            aps = validate(save_folder + cfg['name'] + '_latest.pth')
+            aps = validate(save_folder + cfg['name'] + '_latest.pth', args.network)
             print('val metrics:', aps)
-            if aps[0] > best_metrics[0]:
+            print('cur best metrics:', best_metrics)
+            if aps[-1] > best_metrics[-1]:
                 best_metrics = aps
-                print('cur best metrics:', best_metrics)
                 torch.save(net.state_dict(), save_folder + cfg['name'] + '_best.pth')
 
 
