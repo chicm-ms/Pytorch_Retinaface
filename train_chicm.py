@@ -103,7 +103,7 @@ def train():
     epoch = 0 + args.resume_epoch
     print('Loading Dataset...')
 
-    dataset = WiderFaceDetection( training_dataset,preproc(img_dim, rgb_mean))
+    dataset = WiderFaceDetection( training_dataset,preproc(img_dim, rgb_mean), cutmix_prob=0.6)
 
     epoch_size = math.ceil(len(dataset) / batch_size)
     
@@ -143,7 +143,7 @@ def train():
             targets = [anno.cuda() for anno in targets]
 
             #mixup
-            if random.random() < 0.4 and epoch >= 0:
+            if False: #random.random() < 0.4 and epoch >= 0:
                 shuffle_indices = torch.randperm(images.size(0))
                 indices = torch.arange(images.size(0))
                 lam = np.clip(np.random.beta(1.0, 1.0), 0.35, 0.65)
